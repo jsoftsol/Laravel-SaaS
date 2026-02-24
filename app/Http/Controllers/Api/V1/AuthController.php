@@ -2,69 +2,44 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Services\AuthService;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    protected $authService;
+
+    public function __construct(AuthService $authService)
     {
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $this->authService = $authService;
+    }
 
-        $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        $token = $user->createToken('api-token')->plainTextToken;
+    public function register(RegisterRequest $request)
+    {
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
             'status'  => true,
             'message' => 'User registered successfully',
-            'data'    => [
-                'user'  => $user,
-                'token' => $token,
-            ],
+            'data'    => $result,
         ], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Invalid credentials.'],
-            ]);
-        }
-
-        $token = $user->createToken('api-token')->plainTextToken;
+        $result = $this->authService->login($request->validated());
 
         return response()->json([
             'status'  => true,
             'message' => 'Login successful',
-            'data'    => [
-                'user'  => $user,
-                'token' => $token,
-            ],
+            'data'    => $result,
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout()
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->authService->logout(auth()->user());
 
         return response()->json([
             'status'  => true,
