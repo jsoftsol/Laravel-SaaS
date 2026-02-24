@@ -9,6 +9,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+use App\Models\Company;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -52,9 +54,5 @@ class User extends Authenticatable
 
     public function company(){
         return $this->belongsTo(Company::class);
-    }
-
-    public function role() {
-        return $this->belongsTo(Role::class);
     }
 }
