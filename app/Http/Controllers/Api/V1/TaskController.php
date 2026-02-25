@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Task;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -36,17 +37,28 @@ class TaskController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Task $task)
     {
-        //
+        $this->authorize('view', $task);
+        return response()->json($task);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Task $task)
     {
-        //
+        $this->authorize('update', $task);
+
+        $request->validate([
+            'status'      => 'required|in:pending,in_progress,completed',
+            'title'       => 'sometimes|string',
+            'description' => 'sometimes|string',
+        ]);
+
+        $task->update($request->only('title', 'description', 'status'));
+
+        return response()->json($task);
     }
 
     /**
@@ -55,5 +67,21 @@ class TaskController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function assign(Request $request, Task $task)
+    {
+        $this->authorize('assign', Task::class);
+
+        $request->validate([
+            'assigned_to' => 'required|exists:users,id',
+        ]);
+
+        // Ensure assigned user is in the same company
+        $user              = $task->project->company->users()->findOrFail($request->assigned_to);
+        $task->assigned_to = $user->id;
+        $task->save();
+
+        return response()->json($task);
     }
 }
