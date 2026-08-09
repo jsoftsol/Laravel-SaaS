@@ -4,12 +4,20 @@ A running decision log for this repo: what changed, why, and what's still open. 
 
 ## Open items
 
-- `TaskController::assign()` has no route registered.
-- `ProjectController@update/@destroy` and `TaskController@index/@destroy` are unimplemented stubs.
-- No tests exist beyond the default Laravel skeleton examples (`tests/Unit/ExampleTest.php`, `tests/Feature/ExampleTest.php`).
+- No tests exist beyond the default Laravel skeleton examples (`tests/Unit/ExampleTest.php`, `tests/Feature/ExampleTest.php`) — the fixes below were verified via a rolled-back tinker transaction, not automated tests.
 - Open product questions live in `PRD.md` (Admin vs Manager distinction, multi-company users, cascade behavior, UI plans).
+- `TaskPolicy::delete()` was implemented from scratch (previously hardcoded `false`) using the same admin/manager-in-company rule as `view`/`update`, since nothing documented an intended delete policy — worth confirming this matches real product intent.
 
 ## Decision log
+
+### 2026-08-09 (continued)
+- Fixed two more mass-assignment bugs of the same shape as the already-fixed `Company::$fillable` one: `App\Models\Project` and `App\Models\Task` both had no `$fillable`, so `ProjectController::store()` and `TaskController::store()` were throwing `MassAssignmentException` on every call (default Eloquent `$guarded = ['*']`, nothing unguards it). Added `Project::$fillable = ['name', 'description']` and `Task::$fillable = ['title', 'description', 'status', 'assigned_to']` — deliberately left `project_id` off `Task::$fillable` since it's set via the `$project->tasks()->create()` relation, not user input. Verified with `php artisan tinker --execute="...\App\Models\Project()->fill(...)"` before the fix (confirmed the exception) and after (confirmed it fills cleanly).
+- Closed all three previously-open stub/routing items:
+  - Registered the missing route: `Route::post('tasks/{task}/assign', [TaskController::class, 'assign'])` in `routes/api.php` (apiResource only covers the standard 7 actions, `assign` needed its own line).
+  - Implemented `TaskController::index()` — company-scoped via `whereHas('project', ...)`, further restricted to `assigned_to = auth user` for non-admin/manager roles, matching the visibility rule already documented in `PRD.md`'s role table.
+  - Implemented `TaskController::destroy()` — now authorizes via `TaskPolicy::delete()` (previously hardcoded `false`; changed to mirror `update()`'s admin/manager-in-company rule, since leaving it `false` would make the newly-implemented endpoint permanently forbidden for everyone).
+  - Implemented `ProjectController::update()`/`@destroy()` — same manual company-scoping pattern as `show()`/`store()` (`auth()->user()->company->projects()->findOrFail($id)`); no `ProjectPolicy` exists so none was introduced, consistent with the rest of the controller.
+- Verified the full chain (register → create project → update project → create task → list as index would → check delete policy → delete task → delete project) via a `DB::beginTransaction()`/`DB::rollBack()`-wrapped tinker script — all steps succeeded, nothing persisted to the dev `database.sqlite`. `composer test` (2 skeleton tests) still passes; `php artisan route:list --path=v1` confirms all 14 routes including the new `assign` one.
 
 ### 2026-08-09
 - Created `CLAUDE.md`, `PRD.md`, and this file. `PRD.md` is reverse-engineered from the current code (no prior spec existed) and is expected to need correction as real product intent is clarified. This file is meant to be updated whenever a non-obvious decision is made or a bug/gap is found worth remembering across sessions — append new entries here rather than editing history.

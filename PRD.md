@@ -21,8 +21,8 @@ Small-to-mid teams inside a company who need to track projects and assign tasks 
 
 | Role | Task visibility | Task actions |
 |---|---|---|
-| Admin | all tasks in own company | view, update, assign |
-| Manager | all tasks in own company | view, update, assign |
+| Admin | all tasks in own company | view, update, delete, assign |
+| Manager | all tasks in own company | view, update, delete, assign |
 | Developer | only tasks assigned to self | view, update own |
 
 Admin/Manager are currently equivalent in permission logic — no distinction is enforced anywhere yet **[gap]**.
@@ -36,11 +36,7 @@ Admin/Manager are currently equivalent in permission logic — no distinction is
 
 ## Features declared but not working
 
-- Assigning a task to another user via the dedicated `assign` endpoint — the controller method exists but has no route.
-- Updating/deleting a project (`ProjectController@update/@destroy` are empty stubs).
-- Listing/deleting tasks (`TaskController@index/@destroy` are empty stubs).
-
-See `CLAUDE.md` → "Known issues" for the full technical detail, and `MEMORIES.md` for the running decision log.
+(none currently — as of 2026-08-09 the previously-listed gaps — the `assign` route, project update/destroy, task index/destroy, and mass-assignment bugs on `Project`/`Task` — are all fixed. See `MEMORIES.md` for detail.)
 
 ## Explicit non-goals (current state, not necessarily permanent)
 
