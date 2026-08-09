@@ -44,7 +44,16 @@ class ProjectController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $project = auth()->user()->company->projects()->findOrFail($id);
+
+        $request->validate([
+            'name'        => 'sometimes|string',
+            'description' => 'nullable|string',
+        ]);
+
+        $project->update($request->only('name', 'description'));
+
+        return response()->json($project);
     }
 
     /**
@@ -52,6 +61,9 @@ class ProjectController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $project = auth()->user()->company->projects()->findOrFail($id);
+        $project->delete();
+
+        return response()->json(null, 204);
     }
 }

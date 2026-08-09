@@ -12,7 +12,13 @@ class TaskController extends Controller
      */
     public function index()
     {
-        //
+        $user = auth()->user();
+
+        $tasks = Task::whereHas('project', fn ($query) => $query->where('company_id', $user->company_id))
+            ->when(! $user->hasRole(['admin', 'manager']), fn ($query) => $query->where('assigned_to', $user->id))
+            ->get();
+
+        return response()->json($tasks);
     }
 
     /**
@@ -64,9 +70,13 @@ class TaskController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Task $task)
     {
-        //
+        $this->authorize('delete', $task);
+
+        $task->delete();
+
+        return response()->json(null, 204);
     }
 
     public function assign(Request $request, Task $task)

@@ -55,7 +55,8 @@ class TaskPolicy
      */
     public function delete(User $user, Task $task): bool
     {
-        return false;
+        // Admin & Manager can delete tasks in their company
+        return $user->hasRole(['admin', 'manager']) && $task->project->company_id === $user->company_id;
     }
 
     /**

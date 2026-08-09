@@ -9,6 +9,11 @@ use App\Models\Task;
 
 class Project extends Model
 {
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
     public function company() {
         return $this->belongsTo(Company::class);
     }

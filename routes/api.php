@@ -16,6 +16,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('projects', ProjectController::class);
         Route::apiResource('tasks', TaskController::class);
+        Route::post('tasks/{task}/assign', [TaskController::class, 'assign']);
     });
 
 });
