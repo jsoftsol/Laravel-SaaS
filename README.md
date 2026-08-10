@@ -55,40 +55,103 @@ All endpoints are versioned under `/api/v1`. Send `Accept: application/json` on 
 
 ### Auth
 
-| Method | Path | Auth | Body |
-|---|---|---|---|
-| POST | `/v1/register` | none | `name` (required, string, max:255), `email` (required, email, max:255, unique), `password` (required, string, min:6, confirmed), `password_confirmation` (required, must match `password`) |
-| POST | `/v1/login` | none | `email` (required, email), `password` (required) |
-| POST | `/v1/logout` | Bearer token | — |
+#### `POST /v1/register`
+- **Auth:** none
+- **Body:**
+  - `name` — required, string, max 255
+  - `email` — required, email, max 255, unique
+  - `password` — required, string, min 6, confirmed
+  - `password_confirmation` — required, must match `password`
+- Creates a brand-new `Company` for the user and assigns them the `admin` role.
 
-`register` and `login` both respond with `{ status, message, data: { user, token } }`. `token` is a Sanctum plain-text token — pass it as `Authorization: Bearer <token>` on every subsequent request. `logout` revokes only the calling request's current token.
+#### `POST /v1/login`
+- **Auth:** none
+- **Body:**
+  - `email` — required, email
+  - `password` — required
+
+#### `POST /v1/logout`
+- **Auth:** Bearer token
+- **Body:** none
+- Revokes only the current request's access token.
+
+`register` and `login` both respond with `{ status, message, data: { user, token } }`. `token` is a Sanctum plain-text token — pass it as `Authorization: Bearer <token>` on every subsequent request.
 
 ### Projects
 
 All project routes are scoped to `auth()->user()->company` — you can only ever see/edit/delete your own company's projects; no `ProjectPolicy` exists, scoping is done by hand in the controller.
 
-| Method | Path | Body | Notes |
-|---|---|---|---|
-| GET | `/v1/projects` | — | Lists the caller's company projects, each with its `tasks` eager-loaded |
-| POST | `/v1/projects` | `name` (required, string), `description` (nullable, string) | 201 on success |
-| GET | `/v1/projects/{id}` | — | 404 if the project belongs to another company |
-| PUT/PATCH | `/v1/projects/{id}` | `name` (sometimes, string), `description` (nullable, string) | Partial updates allowed |
-| DELETE | `/v1/projects/{id}` | — | 204 No Content |
+#### `GET /v1/projects`
+- **Auth:** Bearer token
+- **Body:** none
+- Lists the caller's company projects, each with its `tasks` eager-loaded.
+
+#### `POST /v1/projects`
+- **Auth:** Bearer token
+- **Body:**
+  - `name` — required, string
+  - `description` — nullable, string
+- Returns `201` with the created project.
+
+#### `GET /v1/projects/{id}`
+- **Auth:** Bearer token
+- **Body:** none
+- `404` if the project belongs to another company.
+
+#### `PUT/PATCH /v1/projects/{id}`
+- **Auth:** Bearer token
+- **Body:**
+  - `name` — sometimes, string
+  - `description` — nullable, string
+- Partial updates allowed — omit fields you don't want to change.
+
+#### `DELETE /v1/projects/{id}`
+- **Auth:** Bearer token
+- **Body:** none
+- Returns `204 No Content`.
 
 ### Tasks
 
-Task visibility/actions are role-gated via `TaskPolicy` (Admin/Manager: anything in their company; Developer: only tasks assigned to them). `assign` is further restricted to Admin/Manager only.
+Task visibility/actions are role-gated via `TaskPolicy`: Admin/Manager can act on anything in their company; Developer only on tasks assigned to them. `assign` is further restricted to Admin/Manager only.
 
-| Method | Path | Body | Who can call it |
-|---|---|---|---|
-| GET | `/v1/tasks` | — | Everyone — Admin/Manager see all company tasks, Developer sees only tasks `assigned_to` them |
-| POST | `/v1/tasks` | `project_id` (required, must exist, and belong to caller's company), `title` (required, string), `description` (nullable, string), `assigned_to` (nullable, must exist in `users`) | Anyone authenticated (no `create` policy is enforced) |
-| GET | `/v1/tasks/{id}` | — | Admin/Manager (same company) or the assigned Developer — else 403 |
-| PUT/PATCH | `/v1/tasks/{id}` | `status` (**required**, one of `pending`/`in_progress`/`completed`), `title` (sometimes, string), `description` (sometimes, string) | Admin/Manager (same company) or the assigned Developer — else 403 |
-| DELETE | `/v1/tasks/{id}` | — | Admin/Manager only (same company) — else 403 |
-| POST | `/v1/tasks/{id}/assign` | `assigned_to` (required, must exist in `users`, and belong to the task's company) | Admin/Manager only — else 403 |
+#### `GET /v1/tasks`
+- **Auth:** Bearer token
+- **Body:** none
+- **Who can call it:** everyone — Admin/Manager see all company tasks, Developer sees only tasks `assigned_to` them.
 
-Note `status` is marked `required` on update even though the endpoint is also used for title/description-only edits — send the task's current `status` back if you're not changing it, or the request will fail validation.
+#### `POST /v1/tasks`
+- **Auth:** Bearer token
+- **Body:**
+  - `project_id` — required, must exist, must belong to the caller's company
+  - `title` — required, string
+  - `description` — nullable, string
+  - `assigned_to` — nullable, must exist in `users`
+- **Who can call it:** anyone authenticated (no `create` policy is enforced).
+
+#### `GET /v1/tasks/{id}`
+- **Auth:** Bearer token
+- **Body:** none
+- **Who can call it:** Admin/Manager (same company) or the assigned Developer — else `403`.
+
+#### `PUT/PATCH /v1/tasks/{id}`
+- **Auth:** Bearer token
+- **Body:**
+  - `status` — **required**, one of `pending` / `in_progress` / `completed`
+  - `title` — sometimes, string
+  - `description` — sometimes, string
+- **Who can call it:** Admin/Manager (same company) or the assigned Developer — else `403`.
+- `status` is required even when you're only changing `title`/`description` — send the task's current status back if it isn't changing, or the request fails validation.
+
+#### `DELETE /v1/tasks/{id}`
+- **Auth:** Bearer token
+- **Body:** none
+- **Who can call it:** Admin/Manager only (same company) — else `403`.
+
+#### `POST /v1/tasks/{id}/assign`
+- **Auth:** Bearer token
+- **Body:**
+  - `assigned_to` — required, must exist in `users`, must belong to the task's company
+- **Who can call it:** Admin/Manager only — else `403`.
 
 ### Quick test walkthrough
 
