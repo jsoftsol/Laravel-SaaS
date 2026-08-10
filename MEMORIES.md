@@ -10,6 +10,10 @@ A running decision log for this repo: what changed, why, and what's still open. 
 
 ## Decision log
 
+### 2026-08-10
+- Rewrote README's API section as a full endpoint reference (per-endpoint auth/role/body-validation tables) plus a runnable curl walkthrough, since the previous "API surface" list only covered 7 of the 14 routes (missing project update/destroy, task index/destroy/assign entirely) and predated those endpoints being implemented. Also fixed the "status & roadmap" section, which still listed the assign-route/stub items as open even though `MEMORIES.md` recorded them as fixed on 2026-08-09.
+- Added an explicit testing note: `AuthService::register()` always assigns the new user `admin` (never `manager`/`developer`), so there's currently no way to get a non-admin user via the public API — testing the Developer/Manager branches of `TaskPolicy` requires seeding roles and reassigning one manually via tinker. Surfaced this as an open product question in the README roadmap too (whether role assignment should ever be exposed via signup).
+
 ### 2026-08-09 (continued)
 - Fixed two more mass-assignment bugs of the same shape as the already-fixed `Company::$fillable` one: `App\Models\Project` and `App\Models\Task` both had no `$fillable`, so `ProjectController::store()` and `TaskController::store()` were throwing `MassAssignmentException` on every call (default Eloquent `$guarded = ['*']`, nothing unguards it). Added `Project::$fillable = ['name', 'description']` and `Task::$fillable = ['title', 'description', 'status', 'assigned_to']` — deliberately left `project_id` off `Task::$fillable` since it's set via the `$project->tasks()->create()` relation, not user input. Verified with `php artisan tinker --execute="...\App\Models\Project()->fill(...)"` before the fix (confirmed the exception) and after (confirmed it fills cleanly).
 - Closed all three previously-open stub/routing items:
