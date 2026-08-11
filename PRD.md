@@ -40,7 +40,7 @@ Admin/Manager are currently equivalent in permission logic — no distinction is
 
 ## Explicit non-goals (current state, not necessarily permanent)
 
-- No frontend UI (Blade/Livewire/Inertia/SPA) — Tailwind/Vite are wired up but unused.
+- No application frontend UI (Blade/Livewire/Inertia/SPA) — Tailwind/Vite are wired up but unused. The `/` route (`resources/views/welcome.blade.php`) is a static, self-contained informational landing page (project name/tagline/architecture highlights), not an app UI — it doesn't use Tailwind/Vite or talk to the API.
 - No cross-company sharing of projects/tasks — a task and its project always belong to one company.
 - No billing/subscription logic yet.
 - No email verification, password reset, or 2FA flows yet.
