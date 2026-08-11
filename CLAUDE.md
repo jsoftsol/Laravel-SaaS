@@ -6,7 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Laravel 12 API-only SaaS backend (multi-tenant: companies → projects → tasks) with Sanctum auth and Spatie roles/permissions. No frontend framework is wired up — `resources/views` is the stock Laravel welcome page; the real surface is `routes/api.php`.
 
-**Read `PRD.md` and `MEMORIES.md` at the start of every session, before doing any work.** `PRD.md` is the product spec (reverse-engineered from code — correct it as real intent becomes clear). `MEMORIES.md` is a running decision log of what changed, why, and what's still open — append to it (don't rewrite history) whenever you make a non-obvious decision or find something worth remembering across sessions.
+**Read `PRD.md`, `MEMORIES.md`, and `memory/MEMORY.md` (plus the files it indexes) at the start of every session, before doing any work.** `PRD.md` is the product spec (reverse-engineered from code — correct it as real intent becomes clear). `MEMORIES.md` is a running decision log of what changed, why, and what's still open — append to it (don't rewrite history) whenever you make a non-obvious decision or find something worth remembering across sessions.
+
+## Memory
+
+All persistent Claude memory for this project is stored **locally on disk in this repo directory**, never in the global cross-session memory directory (`~/.claude/projects/.../memory/`) — see `memory/feedback_local_memory_only.md`. Both `MEMORIES.md` and `memory/` are gitignored: they exist only in the local working copy, are never committed or pushed, and are read straight off disk each session regardless of git tracking status. When you'd normally save a user/feedback/project/reference-type memory:
+
+- Write it to `memory/<type>_<slug>.md` using the same frontmatter convention as the files already there (`name`, `description`, `metadata.type`, `metadata.modified`).
+- Add a one-line pointer to it in `memory/MEMORY.md`.
+- Do not create or write to any file under the global `~/.claude/projects/.../memory/` path for this project.
+
+`MEMORIES.md` (repo root) stays the running decision log for code-level changes; `memory/` is for the more structured, cross-session user/feedback/project/reference memory types.
 
 ## Commands
 
